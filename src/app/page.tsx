@@ -86,21 +86,21 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/products"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-[0.98]"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-xs font-bold text-primary-foreground shadow-2xs transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
                 <span>Shop Catalog</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/products?category=electronics"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-background px-6 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-background px-5 text-xs font-semibold text-foreground transition-colors hover:bg-muted/60"
               >
                 View Electronics
               </Link>
             </div>
 
             {/* Performance Metric Badges */}
-            <div className="mt-12 grid grid-cols-3 gap-6 pt-8 border-t border-border/40 text-left">
+            <div className="mt-12 grid grid-cols-3 gap-6 pt-8 border-t border-slate-200/80 dark:border-slate-800/80 text-left">
               <div>
                 <p className="font-mono text-2xl sm:text-3xl font-bold text-foreground">
                   &lt; 50ms
@@ -125,28 +125,28 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 md:py-24 bg-muted/10">
+      <section className="py-14 md:py-20 bg-muted/15">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-10">
+          <div className="flex items-end justify-between mb-8">
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                <Flame className="w-4 h-4 text-amber-500" />
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary mb-1">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
                 <span>Curated Selection</span>
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Featured Gear
               </h2>
             </div>
             <Link
               href="/products"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              className="group inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
             >
               <span>View all items</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featured.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -155,41 +155,41 @@ export default async function HomePage() {
       </section>
 
       {/* Architecture Highlights Section */}
-      <section className="py-16 border-t border-border/40 bg-background">
+      <section className="py-14 border-t border-slate-200 dark:border-slate-800 bg-background">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl border bg-card/50">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                <Zap className="h-5 w-5" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-card shadow-2xs">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <Zap className="h-4.5 w-4.5" />
               </div>
-              <h3 className="font-heading font-semibold text-base text-foreground">
+              <h3 className="font-heading font-bold text-sm text-foreground">
                 ISR &amp; Edge Delivery
               </h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                 Pages are server-rendered and statically optimized using Next.js 15 incremental revalidation, delivering lightning fast TTFB.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border bg-card/50">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                <Shield className="h-5 w-5" />
+            <div className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-card shadow-2xs">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <Shield className="h-4.5 w-4.5" />
               </div>
-              <h3 className="font-heading font-semibold text-base text-foreground">
+              <h3 className="font-heading font-bold text-sm text-foreground">
                 Atomic Checkout Safety
               </h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                 All checkout orders execute via Prisma database transactions on the Bun backend, guaranteeing zero inventory over-allocation.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl border bg-card/50">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                <Sparkles className="h-5 w-5" />
+            <div className="p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-card shadow-2xs">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <Sparkles className="h-4.5 w-4.5" />
               </div>
-              <h3 className="font-heading font-semibold text-base text-foreground">
+              <h3 className="font-heading font-bold text-sm text-foreground">
                 Zustand Persistent State
               </h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                 Client shopping bag syncs instantaneously to localStorage with SSR hydration guards, keeping customers ready to buy across sessions.
               </p>
             </div>
@@ -199,3 +199,4 @@ export default async function HomePage() {
     </div>
   )
 }
+

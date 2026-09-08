@@ -1,8 +1,21 @@
 import { Metadata } from "next"
+import Link from "next/link"
 import { apiClient } from "@/lib/api-client"
 import { ProductCard } from "@/components/products/product-card"
 import { Product } from "@/types/product"
-import { Sparkles, SlidersHorizontal } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import {
+  SlidersHorizontal,
+  Info,
+  CheckCircle2,
+  Package,
+  RotateCcw,
+  Search,
+  ArrowUpDown,
+  Tag,
+  Boxes,
+} from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Product Catalog",
@@ -88,7 +101,6 @@ const MOCK_PRODUCTS: Product[] = [
 
 async function getProducts(): Promise<Product[]> {
   try {
-    // Next.js 15 fetch with 300s ISR revalidation for sub-second performance
     const res = await apiClient<Product[] | { products: Product[] }>(
       "/api/v1/products",
       {
@@ -104,7 +116,6 @@ async function getProducts(): Promise<Product[]> {
     }
     return MOCK_PRODUCTS
   } catch {
-    // Backend offline fallback for local dev
     return MOCK_PRODUCTS
   }
 }
@@ -114,104 +125,312 @@ interface ProductsPageProps {
     category?: string
     search?: string
     sort?: string
+    availability?: string
   }>
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const resolvedParams = await searchParams
-  const categoryFilter = resolvedParams?.category
+  const categoryFilter = resolvedParams?.category?.toLowerCase()
   const searchQuery = resolvedParams?.search?.toLowerCase()
+  const availabilityFilter = resolvedParams?.availability?.toLowerCase()
+  const sortParam = resolvedParams?.sort || "featured"
 
   const allProducts = await getProducts()
 
   // Apply filters
-  const filteredProducts = allProducts.filter((product) => {
-    if (categoryFilter && product.category?.toLowerCase() !== categoryFilter.toLowerCase()) {
+  let filteredProducts = allProducts.filter((product) => {
+    if (categoryFilter && product.category?.toLowerCase() !== categoryFilter) {
       return false
     }
     if (
       searchQuery &&
       !product.name.toLowerCase().includes(searchQuery) &&
-      !product.description?.toLowerCase().includes(searchQuery)
+      !product.description?.toLowerCase().includes(searchQuery) &&
+      !product.sku?.toLowerCase().includes(searchQuery)
     ) {
+      return false
+    }
+    if (availabilityFilter === "instock" && product.stock <= 0) {
+      return false
+    }
+    if (availabilityFilter === "lowstock" && (product.stock <= 0 || product.stock > 5)) {
       return false
     }
     return true
   })
 
+  // Apply sort
+  if (sortParam === "price-asc") {
+    filteredProducts = [...filteredProducts].sort((a, b) => a.price - b.price)
+  } else if (sortParam === "price-desc") {
+    filteredProducts = [...filteredProducts].sort((a, b) => b.price - a.price)
+  } else if (sortParam === "stock-desc") {
+    filteredProducts = [...filteredProducts].sort((a, b) => b.stock - a.stock)
+  }
+
   const categories = [
-    { label: "All Categories", value: "" },
+    { label: "All Collections", value: "" },
     { label: "Electronics", value: "electronics" },
     { label: "Apparel", value: "apparel" },
     { label: "Accessories", value: "accessories" },
   ]
 
+  const totalInStock = allProducts.filter((p) => p.stock > 0).length
+  const hasActiveFilters = Boolean(categoryFilter || searchQuery || availabilityFilter || (sortParam && sortParam !== "featured"))
+
   return (
-    <div className="min-h-screen bg-muted/10 py-10">
+    <div className="min-h-screen bg-muted/15 py-8">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/60 pb-6 mb-8">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Full Catalog</span>
+        {/* Polaris High-Trust Banner */}
+        <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50/70 dark:border-sky-800/60 dark:bg-sky-950/30 p-4 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-1 rounded-md bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-300 shrink-0 mt-0.5">
+              <Info className="w-4 h-4" />
             </div>
-            <h1 className="font-heading text-3xl md:text-4xl font-black tracking-tight text-foreground">
-              {categoryFilter
-                ? `${categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}`
-                : "All Products"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Showing {filteredProducts.length} high-performance items in stock.
-            </p>
-          </div>
-
-          {/* Quick Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-            <SlidersHorizontal className="w-4 h-4 text-muted-foreground mr-1 hidden sm:inline" />
-            {categories.map((cat) => {
-              const isSelected = (categoryFilter || "") === cat.value
-              const href = cat.value ? `/products?category=${cat.value}` : "/products"
-
-              return (
-                <a
-                  key={cat.value}
-                  href={href}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors border ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                      : "bg-background text-muted-foreground border-border/80 hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {cat.label}
-                </a>
-              )
-            })}
+            <div className="flex-1 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-sky-900 dark:text-sky-200">
+                  Inventory Guarantee &amp; Atomic Reservation Active
+                </span>
+                <Badge variant="info" className="text-[10px] h-4">
+                  Verified In Stock
+                </Badge>
+              </div>
+              <p className="text-sky-800/90 dark:text-sky-300/80 mt-0.5 leading-relaxed">
+                All catalog items are backed by real-time database locks to eliminate stock contention. Complimentary priority delivery automatically applies to all orders over $50.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Product Grid */}
-        {filteredProducts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-12 text-center bg-card">
-            <h3 className="text-lg font-semibold text-foreground">No products found</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Try adjusting your search criteria or category filter.
-            </p>
-            <a
-              href="/products"
-              className="inline-block mt-4 text-xs font-semibold text-primary hover:underline"
-            >
-              Reset filters &rarr;
-            </a>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
+        {/* Polaris Resource List Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Polaris Filter Sidebar */}
+          <aside className="lg:col-span-3 space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-card p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                  <span>Filters &amp; Facets</span>
+                </div>
+                {hasActiveFilters && (
+                  <Link
+                    href="/products"
+                    className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset</span>
+                  </Link>
+                )}
+              </div>
+
+              {/* Collections / Categories */}
+              <div className="py-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Tag className="w-3 h-3" />
+                  <span>Category</span>
+                </span>
+                <div className="space-y-1">
+                  {categories.map((cat) => {
+                    const isSelected = (categoryFilter || "") === cat.value
+                    const count = cat.value
+                      ? allProducts.filter((p) => p.category?.toLowerCase() === cat.value).length
+                      : allProducts.length
+
+                    const nextUrl = new URLSearchParams()
+                    if (cat.value) nextUrl.set("category", cat.value)
+                    if (searchQuery) nextUrl.set("search", searchQuery)
+                    if (availabilityFilter) nextUrl.set("availability", availabilityFilter)
+                    if (sortParam && sortParam !== "featured") nextUrl.set("sort", sortParam)
+
+                    return (
+                      <Link
+                        key={cat.value}
+                        href={`/products?${nextUrl.toString()}`}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                        }`}
+                      >
+                        <span>{cat.label}</span>
+                        <span className={`text-[10px] font-mono ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                          {count}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Inventory Status Filter */}
+              <div className="py-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Boxes className="w-3 h-3" />
+                  <span>Availability</span>
+                </span>
+                <div className="space-y-1">
+                  {[
+                    { label: "All Items", value: "" },
+                    { label: "In Stock Only", value: "instock" },
+                    { label: "Low Stock Alert (≤5)", value: "lowstock" },
+                  ].map((av) => {
+                    const isSelected = (availabilityFilter || "") === av.value
+                    const nextUrl = new URLSearchParams()
+                    if (categoryFilter) nextUrl.set("category", categoryFilter)
+                    if (searchQuery) nextUrl.set("search", searchQuery)
+                    if (av.value) nextUrl.set("availability", av.value)
+                    if (sortParam && sortParam !== "featured") nextUrl.set("sort", sortParam)
+
+                    return (
+                      <Link
+                        key={av.value}
+                        href={`/products?${nextUrl.toString()}`}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "bg-secondary text-foreground font-semibold border border-slate-200 dark:border-slate-700"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                        }`}
+                      >
+                        <span>{av.label}</span>
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Sort By Filter */}
+              <div className="pt-3 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <ArrowUpDown className="w-3 h-3" />
+                  <span>Sort Order</span>
+                </span>
+                <div className="space-y-1">
+                  {[
+                    { label: "Featured First", value: "featured" },
+                    { label: "Price: Low to High", value: "price-asc" },
+                    { label: "Price: High to Low", value: "price-desc" },
+                    { label: "Highest Stock", value: "stock-desc" },
+                  ].map((s) => {
+                    const isSelected = sortParam === s.value
+                    const nextUrl = new URLSearchParams()
+                    if (categoryFilter) nextUrl.set("category", categoryFilter)
+                    if (searchQuery) nextUrl.set("search", searchQuery)
+                    if (availabilityFilter) nextUrl.set("availability", availabilityFilter)
+                    if (s.value !== "featured") nextUrl.set("sort", s.value)
+
+                    return (
+                      <Link
+                        key={s.value}
+                        href={`/products?${nextUrl.toString()}`}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "bg-secondary text-foreground font-semibold border border-slate-200 dark:border-slate-700"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                        }`}
+                      >
+                        <span>{s.label}</span>
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Micro-summary Card */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-card p-4 shadow-2xs text-xs space-y-2">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Total Catalog Items</span>
+                <span className="font-mono font-bold text-foreground">{allProducts.length}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>Active Available Units</span>
+                <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{totalInStock}</span>
+              </div>
+              <Separator className="my-1" />
+              <div className="text-[11px] text-muted-foreground">
+                Prisma transactional verification enabled on all checkout sessions.
+              </div>
+            </div>
+          </aside>
+
+          {/* Right: Polaris Index / Resource List */}
+          <main className="lg:col-span-9 space-y-4">
+            {/* Index Header & Active Filter Badges */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-card p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 className="font-heading text-lg font-bold text-foreground">
+                  {categoryFilter
+                    ? `${categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)} Products`
+                    : "All Catalog Inventory"}
+                </h1>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Showing <strong className="font-mono text-foreground font-bold">{filteredProducts.length}</strong> of {allProducts.length} products
+                  {searchQuery ? ` matching "${searchQuery}"` : ""}.
+                </p>
+              </div>
+
+              {/* Active Filter Chips */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {categoryFilter && (
+                    <Badge variant="secondary" className="text-[11px] gap-1 font-medium">
+                      Category: {categoryFilter}
+                    </Badge>
+                  )}
+                  {availabilityFilter && (
+                    <Badge variant="secondary" className="text-[11px] gap-1 font-medium">
+                      Status: {availabilityFilter}
+                    </Badge>
+                  )}
+                  {searchQuery && (
+                    <Badge variant="secondary" className="text-[11px] gap-1 font-medium">
+                      Search: &ldquo;{searchQuery}&rdquo;
+                    </Badge>
+                  )}
+                  <Link
+                    href="/products"
+                    className="text-[11px] font-semibold text-primary hover:underline ml-1"
+                  >
+                    Clear All
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Product Cards Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center bg-card shadow-2xs">
+                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground mx-auto mb-3 border border-slate-200 dark:border-slate-800">
+                  <Package className="w-6 h-6 stroke-[1.5]" />
+                </div>
+                <h3 className="text-sm font-bold text-foreground">No matching inventory found</h3>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                  Try adjusting your search criteria, category filters, or availability toggle.
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href="/products"
+                    className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-2xs hover:bg-primary/90 transition-colors"
+                  >
+                    Reset All Filters
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
       </div>
     </div>
   )
 }
+

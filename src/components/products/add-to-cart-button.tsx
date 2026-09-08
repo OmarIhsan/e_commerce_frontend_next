@@ -66,9 +66,9 @@ export function AddToCartButton({
         variant="outline"
         size={size}
         disabled
-        className={`w-full text-muted-foreground border-dashed cursor-not-allowed ${className}`}
+        className={`w-full text-xs font-semibold text-muted-foreground border-slate-200 dark:border-slate-800 bg-muted/30 cursor-not-allowed rounded-lg ${className}`}
       >
-        Out of Stock
+        Sold Out
       </Button>
     )
   }
@@ -76,14 +76,14 @@ export function AddToCartButton({
   if (outOfStockError || isCartStockReached) {
     return (
       <Button
-        variant="secondary"
+        variant="outline"
         size={size}
         disabled={isCartStockReached}
         onClick={handleAdd}
-        className={`w-full text-amber-600 bg-amber-500/10 border-amber-500/20 gap-1.5 ${className}`}
+        className={`w-full text-xs font-semibold text-amber-800 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 gap-1.5 rounded-lg ${className}`}
       >
-        <AlertCircle className="w-4 h-4 text-amber-600" />
-        <span>Max in Cart ({currentInCart})</span>
+        <AlertCircle className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+        <span>Max In Cart ({currentInCart})</span>
       </Button>
     )
   }
@@ -93,21 +93,21 @@ export function AddToCartButton({
       variant={justAdded ? "secondary" : "default"}
       size={size}
       onClick={handleAdd}
-      className={`w-full font-medium transition-all shadow-xs active:scale-[0.98] ${
+      className={`w-full text-xs font-bold transition-all duration-200 shadow-2xs rounded-lg active:scale-[0.98] cursor-pointer ${
         justAdded
-          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-          : "hover:bg-primary/90"
+          ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+          : "bg-primary text-primary-foreground hover:bg-primary/90"
       } ${className}`}
     >
       {justAdded ? (
-        <span className="flex items-center gap-1.5">
-          <Check className="w-4 h-4 stroke-[2.5]" />
-          <span>Added!</span>
+        <span className="flex items-center justify-center gap-1.5 animate-in zoom-in-90 duration-150">
+          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>Added to Order</span>
         </span>
       ) : (
-        <span className="flex items-center gap-1.5">
-          {showIcon && <ShoppingBag className="w-4 h-4" />}
-          <span>Add to Cart</span>
+        <span className="flex items-center justify-center gap-1.5">
+          {showIcon && <ShoppingBag className="w-3.5 h-3.5" />}
+          <span>Quick Add</span>
         </span>
       )}
     </Button>
