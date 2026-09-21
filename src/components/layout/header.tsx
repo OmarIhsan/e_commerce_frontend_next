@@ -38,13 +38,21 @@ interface HeaderProps {
   } | null
 }
 
-const QUICK_SUGGESTIONS = [
-  { name: "Aether Pro Wireless Keyboard", category: "electronics", href: "/products?search=keyboard" },
-  { name: "Hyperion ANC Studio Headphones", category: "electronics", href: "/products?search=headphones" },
-  { name: "Nomad Minimalist Backpack", category: "apparel", href: "/products?search=backpack" },
-  { name: "Vortex 4K 144Hz OLED Monitor", category: "electronics", href: "/products?search=monitor" },
-  { name: "Merino Wool Thermal Tech Hoodie", category: "apparel", href: "/products?search=hoodie" },
-  { name: "Pulse Titanium Smart Ring", category: "accessories", href: "/products?search=ring" },
+interface SearchProductResult {
+  id: string
+  name: string
+  category?: string
+  price: number
+  imageUrl?: string
+  image?: string
+}
+
+const DEFAULT_CATEGORY_SHORTCUTS = [
+  { label: "All Products", href: "/products", category: "all" },
+  { label: "Electronics", href: "/products?category=electronics", category: "electronics" },
+  { label: "Footwear", href: "/products?category=footwear", category: "footwear" },
+  { label: "Apparel", href: "/products?category=apparel", category: "apparel" },
+  { label: "Accessories", href: "/products?category=accessories", category: "accessories" },
 ]
 
 export function Header({ customer }: HeaderProps) {
@@ -58,6 +66,8 @@ export function Header({ customer }: HeaderProps) {
   // Search dialog state
   const [searchOpen, setSearchOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [searchResults, setSearchResults] = React.useState<SearchProductResult[]>([])
+  const [isSearching, setIsSearching] = React.useState(false)
   const searchInputRef = React.useRef<HTMLInputElement>(null)
 
   // Listen for Ctrl+K / Cmd+K
@@ -77,8 +87,44 @@ export function Header({ customer }: HeaderProps) {
   React.useEffect(() => {
     if (searchOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 50)
+    } else {
+      setSearchQuery("")
+      setSearchResults([])
     }
   }, [searchOpen])
+
+  // Debounced live search
+  React.useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
+        const res = await fetch(`${baseUrl}/api/v1/products?search=${encodeURIComponent(searchQuery.trim())}&limit=5`, {
+          headers: { Accept: "application/json" }
+        })
+        if (res.ok) {
+          const json = await res.json()
+          const items: SearchProductResult[] = Array.isArray(json) 
+            ? json 
+            : json.products || json.data || []
+          setSearchResults(items)
+        }
+      } catch {
+        // Fallback to empty results gracefully
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const handleLogout = async () => {
     await logoutAction()
@@ -95,18 +141,12 @@ export function Header({ customer }: HeaderProps) {
   }
 
   const navLinks = [
-    { href: "/products", label: "Catalog" },
+    { href: "/products", label: "All" },
     { href: "/products?category=electronics", label: "Electronics" },
+    { href: "/products?category=footwear", label: "Footwear" },
     { href: "/products?category=apparel", label: "Apparel" },
     { href: "/products?category=accessories", label: "Accessories" },
   ]
-
-  const filteredSuggestions = searchQuery.trim()
-    ? QUICK_SUGGESTIONS.filter((s) =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : QUICK_SUGGESTIONS.slice(0, 4)
 
   return (
     <>
@@ -150,7 +190,7 @@ export function Header({ customer }: HeaderProps) {
             </nav>
           </div>
 
-          {/* Centered Search Bar (Polaris Quick Search with Ctrl+K) */}
+          {/* Centered Search Bar (Quick Search with Ctrl+K) */}
           <div className="flex-1 max-w-md mx-auto hidden sm:block">
             <button
               type="button"
@@ -159,7 +199,7 @@ export function Header({ customer }: HeaderProps) {
             >
               <div className="flex items-center gap-2">
                 <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span>Search catalog, inventory, SKU...</span>
+                <span>Search products...</span>
               </div>
               <div className="flex items-center gap-1">
                 <kbd className="inline-flex items-center gap-0.5 rounded border border-border/80 bg-background px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground shadow-2xs">
@@ -248,7 +288,7 @@ export function Header({ customer }: HeaderProps) {
               </div>
             )}
 
-            {/* Persistent Cart Trigger (Polaris high-visibility drawer button) */}
+            {/* Persistent Cart Trigger */}
             <Button
               variant="outline"
               size="default"
@@ -287,7 +327,7 @@ export function Header({ customer }: HeaderProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products by name, category, or SKU..."
+                placeholder="Search products by name or category..."
                 className="flex-1 bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
@@ -309,42 +349,104 @@ export function Header({ customer }: HeaderProps) {
             </form>
 
             <div className="p-3 max-h-80 overflow-y-auto">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-3 py-1">
-                {searchQuery.trim() ? "Search Results" : "Quick Catalog Shortcuts"}
-              </div>
-              <div className="mt-1 space-y-1">
-                {filteredSuggestions.map((item) => (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => {
-                      setSearchOpen(false)
-                      router.push(item.href)
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs hover:bg-muted/70 transition-colors group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                        <Package className="w-3.5 h-3.5" />
+              {searchQuery.trim() ? (
+                <>
+                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-3 py-1">
+                    <span>Matching Products</span>
+                    {isSearching && <span className="normal-case font-normal">Searching...</span>}
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setSearchOpen(false)
+                            router.push(`/products/${item.id}`)
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs hover:bg-muted/70 transition-colors group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-md bg-muted/60 shrink-0 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-800">
+                              {item.imageUrl || item.image ? (
+                                <img
+                                  src={item.imageUrl || item.image}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Package className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                                {item.name}
+                              </p>
+                              {item.category && (
+                                <span className="text-[10px] text-muted-foreground capitalize">
+                                  {item.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="font-mono font-semibold text-foreground">
+                              ${typeof item.price === "number" ? item.price.toFixed(2) : item.price}
+                            </span>
+                            <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                          </div>
+                        </button>
+                      ))
+                    ) : !isSearching ? (
+                      <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        <p>No products found matching &ldquo;{searchQuery}&rdquo;.</p>
+                        <button
+                          type="button"
+                          onClick={handleSearchSubmit}
+                          className="mt-2 text-primary font-medium hover:underline inline-block"
+                        >
+                          Search catalog anyway &rarr;
+                        </button>
                       </div>
-                      <span className="font-medium text-foreground group-hover:text-primary transition-colors">
-                        {item.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="neutral" className="text-[10px] capitalize">
-                        {item.category}
-                      </Badge>
-                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-3 py-1">
+                    Quick Categories
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    {DEFAULT_CATEGORY_SHORTCUTS.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          setSearchOpen(false)
+                          router.push(item.href)
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs hover:bg-muted/70 transition-colors group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            <Package className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                            {item.label}
+                          </span>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="px-4 py-2.5 bg-muted/30 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Press <kbd className="font-mono font-semibold">Enter</kbd> to submit search query</span>
-              <span>Polaris Search Engine</span>
+              <span>Press <kbd className="font-mono font-semibold">Enter</kbd> to view all results</span>
+              <span>Instant Search</span>
             </div>
           </div>
         </div>

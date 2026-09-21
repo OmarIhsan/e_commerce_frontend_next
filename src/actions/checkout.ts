@@ -66,24 +66,12 @@ export async function checkoutAction(
       }
     }
 
-    // Development offline fallback: simulate successful atomic order
-    const totalAmount = payload.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    )
-
-    const simulatedOrder: OrderConfirmation = {
-      id: `ord_${Date.now().toString(36).toUpperCase()}`,
-      orderNumber: `LMN-${Math.floor(100000 + Math.random() * 900000)}`,
-      totalAmount,
-      status: "CONFIRMED",
-      createdAt: new Date().toISOString(),
-      items: payload.items,
-    }
-
     return {
-      success: true,
-      order: simulatedOrder,
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while placing your order. Please try again.",
     }
   }
 }

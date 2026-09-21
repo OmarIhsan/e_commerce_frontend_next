@@ -7,9 +7,25 @@ export interface Product {
   sku?: string
   category?: string
   image?: string
+  imageUrl?: string
+  slug?: string
+  images?: Array<{
+    id?: string
+    url: string
+    altText?: string | null
+    isPrimary?: boolean
+  }>
   featured?: boolean
   createdAt?: string
   updatedAt?: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  productCount?: number
 }
 
 export interface ProductsResponse {

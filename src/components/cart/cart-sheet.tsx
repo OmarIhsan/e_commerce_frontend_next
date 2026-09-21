@@ -165,7 +165,7 @@ export function CartSheet() {
                           </button>
                         </div>
                         <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
-                          ${item.price.toFixed(2)} each {item.sku ? `• SKU: ${item.sku}` : ""}
+                          ${item.price.toFixed(2)} each
                         </p>
                       </div>
 
@@ -268,7 +268,7 @@ export function CartSheet() {
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Prisma Atomic Database Transaction Guard</span>
+              <span>Guaranteed Safe & Secure Checkout</span>
             </div>
           </SheetFooter>
         )}
