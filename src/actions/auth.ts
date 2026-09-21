@@ -54,13 +54,19 @@ export async function loginAction(
       accessToken?: string
       customer?: { id: string; name: string; email: string }
       user?: { id: string; name: string; email: string }
+      data?: {
+        token?: string
+        accessToken?: string
+        customer?: { id: string; name: string; email: string }
+        user?: { id: string; name: string; email: string }
+      }
       message?: string
     }>("/api/v1/auth/login", {
       method: "POST",
       body: JSON.stringify(parsed.data),
     })
 
-    const token = res.token || res.accessToken
+    const token = res.token || res.accessToken || res.data?.token || res.data?.accessToken
     if (!token) {
       return {
         success: false,
@@ -77,7 +83,7 @@ export async function loginAction(
       maxAge: COOKIE_MAX_AGE,
     })
 
-    const customer = res.customer || res.user
+    const customer = res.customer || res.user || res.data?.customer || res.data?.user
 
     return {
       success: true,
@@ -124,13 +130,19 @@ export async function registerAction(
       accessToken?: string
       customer?: { id: string; name: string; email: string }
       user?: { id: string; name: string; email: string }
+      data?: {
+        token?: string
+        accessToken?: string
+        customer?: { id: string; name: string; email: string }
+        user?: { id: string; name: string; email: string }
+      }
       message?: string
     }>("/api/v1/auth/register", {
       method: "POST",
       body: JSON.stringify(parsed.data),
     })
 
-    const token = res.token || res.accessToken
+    const token = res.token || res.accessToken || res.data?.token || res.data?.accessToken
     if (token) {
       const cookieStore = await cookies()
       cookieStore.set(COOKIE_NAME, token, {
@@ -142,7 +154,7 @@ export async function registerAction(
       })
     }
 
-    const customer = res.customer || res.user
+    const customer = res.customer || res.user || res.data?.customer || res.data?.user
 
     return {
       success: true,
@@ -189,11 +201,12 @@ export async function getCurrentCustomer(): Promise<{
     const res = await apiClient<{
       customer?: { id: string; name: string; email: string }
       user?: { id: string; name: string; email: string }
+      data?: { id: string; name: string; email: string }
     }>("/api/v1/auth/me", {
       token,
     })
 
-    const customer = res.customer || res.user
+    const customer = res.customer || res.user || res.data
     return {
       isAuthenticated: true,
       customer,

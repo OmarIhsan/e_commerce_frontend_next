@@ -58,7 +58,9 @@ export async function apiClient<T>(
     // Next.js 15 Server-side: read cookies via next/headers
     try {
       const cookieStore = await cookies()
-      const sessionToken = cookieStore.get("customer_session_token")?.value
+      const sessionToken =
+        cookieStore.get("customer_session_token")?.value ||
+        cookieStore.get("token")?.value
       if (sessionToken) {
         reqHeaders["Authorization"] = `Bearer ${sessionToken}`
       }
